@@ -37,41 +37,14 @@ export default function Home() {
   const [userOpStatus, setUserOpStatus] = useState('')
 
   const createAccountAndClient = async (passkeyValidator: any) => {
-    kernelAccount = await createKernelAccount(publicClient, {
-      plugins: {
-        sudo: passkeyValidator,
-      },
-    })
-
-    kernelClient = createKernelAccountClient({
-      account: kernelAccount,
-      chain: CHAIN,
-      transport: http(BUNDLER_URL),
-      sponsorUserOperation: async ({ userOperation }) => {
-        const zerodevPaymaster = createZeroDevPaymasterClient({
-          chain: CHAIN,
-          transport: http(PAYMASTER_URL),
-        })
-        return zerodevPaymaster.sponsorUserOperation({
-          userOperation
-        })
-      }
-    })
-
-    setIsKernelClientReady(true)
-    setAccountAddress(kernelAccount.address)
+    // add code here...
   }
 
   // Function to be called when "Register" is clicked
   const handleRegister = async () => {
     setIsRegistering(true)
 
-    const passkeyValidator = await createPasskeyValidator(publicClient, {
-      passkeyName: username,
-      passkeyServerUrl: PASSKEY_SERVER_URL,
-    })
-
-    await createAccountAndClient(passkeyValidator)
+    // add code here...
 
     setIsRegistering(false)
     window.alert('Register done.  Try sending UserOps.')
@@ -80,11 +53,7 @@ export default function Home() {
   const handleLogin = async () => {
     setIsLoggingIn(true)
 
-    const passkeyValidator = await getPasskeyValidator(publicClient, {
-      passkeyServerUrl: PASSKEY_SERVER_URL,
-    })
-
-    await createAccountAndClient(passkeyValidator)
+    // add code here...
 
     setIsLoggingIn(false)
     window.alert('Login done.  Try sending UserOps.')
@@ -95,26 +64,11 @@ export default function Home() {
     setIsSendingUserOp(true)
     setUserOpStatus('Sending UserOp...')
 
-    const userOpHash = await kernelClient.sendUserOperation({
-      userOperation: {
-        callData: await kernelAccount.encodeCallData({
-          to: contractAddress,
-          value: BigInt(0),
-          data: encodeFunctionData({
-            abi: contractABI,
-            functionName: "mint",
-            args: [kernelAccount.address],
-          }),
-        }),
-      },
-    })
+    // add code here...
 
     setUserOpHash(userOpHash)
 
-    const bundlerClient = kernelClient.extend(bundlerActions)
-    await bundlerClient.waitForUserOperationReceipt({
-      hash: userOpHash,
-    })
+    // add code here...
 
     // Update the message based on the count of UserOps
     const userOpMessage = `UserOp completed. <a href="https://jiffyscan.xyz/userOpHash/${userOpHash}?network=mumbai" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:text-blue-700">Click here to view.</a>`
