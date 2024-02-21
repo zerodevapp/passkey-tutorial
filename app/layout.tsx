@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "ZeroDev Passkeys + Session Keys Demo",
+  title: "ZeroDev Passkeys Demo",
   description: "",
 };
 
