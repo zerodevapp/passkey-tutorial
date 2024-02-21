@@ -141,7 +141,7 @@ export default function Home() {
     <main className="flex items-center justify-center min-h-screen px-4 py-24">
       <div className="w-full max-w-lg mx-auto">
         <h1 className="text-4xl font-semibold text-center mb-12">
-          ZeroDev Passkeys Tutorial
+          ZeroDev Passkeys Demo
         </h1>
 
         <div className="space-y-4">
