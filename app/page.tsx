@@ -9,7 +9,7 @@ import { polygonMumbai } from 'viem/chains'
 
 const BUNDLER_URL = 'https://rpc.zerodev.app/api/v2/bundler/c242ca55-4675-4391-aeb9-8321ad5264e8'
 const PAYMASTER_URL = 'https://rpc.zerodev.app/api/v2/paymaster/c242ca55-4675-4391-aeb9-8321ad5264e8'
-const PASSKEY_SERVER_URL = 'https://passkeys.zerodev.app/api/v2/c242ca55-4675-4391-aeb9-8321ad5264e8'
+const PASSKEY_SERVER_URL = 'https://passkeys.zerodev.app/api/v3/c242ca55-4675-4391-aeb9-8321ad5264e8'
 const CHAIN = polygonMumbai
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
