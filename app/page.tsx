@@ -15,11 +15,11 @@ import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
 import { polygonMumbai } from "viem/chains"
 
 const BUNDLER_URL =
-  "https://rpc.zerodev.app/api/v2/bundler/d4382f3c-5849-46ab-b978-7c4858ea87a7"
+  "https://rpc.zerodev.app/api/v2/bundler/ae7b8b91-cbee-4ad9-b419-0dd35185296c"
 const PAYMASTER_URL =
-  "https://rpc.zerodev.app/api/v2/paymaster/d4382f3c-5849-46ab-b978-7c4858ea87a7"
+  "https://rpc.zerodev.app/api/v2/paymaster/ae7b8b91-cbee-4ad9-b419-0dd35185296c"
 const PASSKEY_SERVER_URL =
-  "https://passkeys.zerodev.app/api/v2/d4382f3c-5849-46ab-b978-7c4858ea87a7"
+  "https://passkeys.zerodev.app/api/v3/ae7b8b91-cbee-4ad9-b419-0dd35185296c"
 const CHAIN = polygonMumbai
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
