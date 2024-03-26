@@ -6,21 +6,22 @@ import {
   createZeroDevPaymasterClient,
 } from "@zerodev/sdk"
 import {
+  WEBAUTHN_VALIDATOR_ADDRESS_V07,
   createPasskeyValidator,
   getPasskeyValidator,
 } from "@zerodev/passkey-validator"
-import { bundlerActions } from "permissionless"
+import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
 import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
-import { polygonMumbai } from "viem/chains"
+import { sepolia } from "viem/chains"
 
 const BUNDLER_URL =
-  "https://rpc.zerodev.app/api/v2/bundler/d4382f3c-5849-46ab-b978-7c4858ea87a7"
+  "https://meta-aa-provider.onrender.com/api/v3/bundler/ec9a8985-9972-42d4-9879-15e21e4fe3b6?bundlerProvider=PIMLICO"
 const PAYMASTER_URL =
-  "https://rpc.zerodev.app/api/v2/paymaster/d4382f3c-5849-46ab-b978-7c4858ea87a7"
+  "https://meta-aa-provider.onrender.com/api/v2/paymaster/ec9a8985-9972-42d4-9879-15e21e4fe3b6?paymasterProvider=PIMLICO"
 const PASSKEY_SERVER_URL =
-  "https://passkeys.zerodev.app/api/v2/d4382f3c-5849-46ab-b978-7c4858ea87a7"
-const CHAIN = polygonMumbai
+  "https://passkeys.zerodev.app/api/v3/ec9a8985-9972-42d4-9879-15e21e4fe3b6"
+const CHAIN = sepolia
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
 const contractABI = parseAbi([
@@ -48,23 +49,32 @@ export default function Home() {
 
   const createAccountAndClient = async (passkeyValidator: any) => {
     kernelAccount = await createKernelAccount(publicClient, {
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
       plugins: {
         sudo: passkeyValidator,
+        entryPoint: ENTRYPOINT_ADDRESS_V07,
       },
     })
+
+    console.log("Kernel account created: ", kernelAccount.address)
 
     kernelClient = createKernelAccountClient({
       account: kernelAccount,
       chain: CHAIN,
-      transport: http(BUNDLER_URL),
-      sponsorUserOperation: async ({ userOperation }) => {
-        const zerodevPaymaster = createZeroDevPaymasterClient({
-          chain: CHAIN,
-          transport: http(PAYMASTER_URL),
-        })
-        return zerodevPaymaster.sponsorUserOperation({
-          userOperation,
-        })
+      bundlerTransport: http(BUNDLER_URL),
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      middleware: {
+        sponsorUserOperation: async ({ userOperation }) => {
+          const zeroDevPaymaster = await createZeroDevPaymasterClient({
+            chain: CHAIN,
+            transport: http(PAYMASTER_URL),
+            entryPoint: ENTRYPOINT_ADDRESS_V07,
+          })
+          return zeroDevPaymaster.sponsorUserOperation({
+            userOperation,
+            entryPoint: ENTRYPOINT_ADDRESS_V07,
+          })
+        },
       },
     })
 
@@ -79,6 +89,8 @@ export default function Home() {
     const passkeyValidator = await createPasskeyValidator(publicClient, {
       passkeyName: username,
       passkeyServerUrl: PASSKEY_SERVER_URL,
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      validatorAddress: WEBAUTHN_VALIDATOR_ADDRESS_V07,
     })
 
     await createAccountAndClient(passkeyValidator)
@@ -92,6 +104,8 @@ export default function Home() {
 
     const passkeyValidator = await getPasskeyValidator(publicClient, {
       passkeyServerUrl: PASSKEY_SERVER_URL,
+      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      validatorAddress: WEBAUTHN_VALIDATOR_ADDRESS_V07,
     })
 
     await createAccountAndClient(passkeyValidator)
@@ -121,7 +135,9 @@ export default function Home() {
 
     setUserOpHash(userOpHash)
 
-    const bundlerClient = kernelClient.extend(bundlerActions)
+    const bundlerClient = kernelClient.extend(
+      bundlerActions(ENTRYPOINT_ADDRESS_V07)
+    )
     await bundlerClient.waitForUserOperationReceipt({
       hash: userOpHash,
     })
@@ -234,7 +250,9 @@ export default function Home() {
             {userOpHash && (
               <div
                 className="mt-4"
-                dangerouslySetInnerHTML={{ __html: userOpStatus }}
+                dangerouslySetInnerHTML={{
+                  __html: userOpStatus,
+                }}
               />
             )}
           </div>
