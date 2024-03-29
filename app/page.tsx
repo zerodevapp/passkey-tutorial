@@ -112,7 +112,7 @@ export default function Home() {
             placeholder="Your username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="p-2 border border-gray-300 rounded-lg w-full"
+            className="p-2 text-black border border-gray-300 rounded-lg w-full"
           />
 
           {/* Register and Login Buttons */}
