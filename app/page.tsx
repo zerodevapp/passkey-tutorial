@@ -52,7 +52,6 @@ export default function Home() {
       entryPoint: ENTRYPOINT_ADDRESS_V07,
       plugins: {
         sudo: passkeyValidator,
-        entryPoint: ENTRYPOINT_ADDRESS_V07,
       },
     })
 
@@ -90,7 +89,6 @@ export default function Home() {
       passkeyName: username,
       passkeyServerUrl: PASSKEY_SERVER_URL,
       entryPoint: ENTRYPOINT_ADDRESS_V07,
-      validatorAddress: WEBAUTHN_VALIDATOR_ADDRESS_V07,
     })
 
     await createAccountAndClient(passkeyValidator)
@@ -105,7 +103,6 @@ export default function Home() {
     const passkeyValidator = await getPasskeyValidator(publicClient, {
       passkeyServerUrl: PASSKEY_SERVER_URL,
       entryPoint: ENTRYPOINT_ADDRESS_V07,
-      validatorAddress: WEBAUTHN_VALIDATOR_ADDRESS_V07,
     })
 
     await createAccountAndClient(passkeyValidator)
