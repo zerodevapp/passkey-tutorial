@@ -19,6 +19,7 @@ const BUNDLER_URL = ""
 const PAYMASTER_URL = ""
 const PASSKEY_SERVER_URL = ""
 const CHAIN = sepolia
+const entryPoint = ENTRYPOINT_ADDRESS_V07
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
 const contractABI = parseAbi([
