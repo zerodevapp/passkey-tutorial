@@ -19,6 +19,7 @@ const BUNDLER_URL = ""
 const PAYMASTER_URL = ""
 const PASSKEY_SERVER_URL = ""
 const CHAIN = sepolia
+const entryPoint = ENTRYPOINT_ADDRESS_V07
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
 const contractABI = parseAbi([
@@ -46,7 +47,7 @@ export default function Home() {
 
   const createAccountAndClient = async (passkeyValidator: any) => {
     kernelAccount = await createKernelAccount(publicClient, {
-      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      entryPoint,
       plugins: {
         sudo: passkeyValidator,
       },
@@ -58,17 +59,17 @@ export default function Home() {
       account: kernelAccount,
       chain: CHAIN,
       bundlerTransport: http(BUNDLER_URL),
-      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      entryPoint,
       middleware: {
         sponsorUserOperation: async ({ userOperation }) => {
           const zeroDevPaymaster = await createZeroDevPaymasterClient({
             chain: CHAIN,
             transport: http(PAYMASTER_URL),
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint,
           })
           return zeroDevPaymaster.sponsorUserOperation({
             userOperation,
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint,
           })
         },
       },
@@ -85,7 +86,7 @@ export default function Home() {
     const passkeyValidator = await createPasskeyValidator(publicClient, {
       passkeyName: username,
       passkeyServerUrl: PASSKEY_SERVER_URL,
-      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      entryPoint,
     })
 
     await createAccountAndClient(passkeyValidator)
@@ -99,7 +100,7 @@ export default function Home() {
 
     const passkeyValidator = await getPasskeyValidator(publicClient, {
       passkeyServerUrl: PASSKEY_SERVER_URL,
-      entryPoint: ENTRYPOINT_ADDRESS_V07,
+      entryPoint,
     })
 
     await createAccountAndClient(passkeyValidator)
@@ -130,7 +131,7 @@ export default function Home() {
     setUserOpHash(userOpHash)
 
     const bundlerClient = kernelClient.extend(
-      bundlerActions(ENTRYPOINT_ADDRESS_V07)
+      bundlerActions(entryPoint)
     )
     await bundlerClient.waitForUserOperationReceipt({
       hash: userOpHash,
