@@ -6,7 +6,6 @@ import {
   createZeroDevPaymasterClient,
 } from "@zerodev/sdk"
 import {
-  WEBAUTHN_VALIDATOR_ADDRESS_V07,
   createPasskeyValidator,
   getPasskeyValidator,
 } from "@zerodev/passkey-validator"
