@@ -120,13 +120,18 @@ export default function Home() {
         const userOpHash = await kernelClient.sendUserOperation({
             userOperation: {
                 callData: await kernelAccount.encodeCallData({
-                    to: contractAddress,
+                    // @dev kernel v3 does not have onErc721Received, so it will fail
+                    // to: contractAddress,
+                    // value: BigInt(0),
+                    // data: encodeFunctionData({
+                    //     abi: contractABI,
+                    //     functionName: "mint",
+                    //     args: [kernelAccount.address]
+                    // })
+                    // @dev instead we just send a simple UserOp
+                    to: "0x0000000000000000000000000000000000000000",
                     value: BigInt(0),
-                    data: encodeFunctionData({
-                        abi: contractABI,
-                        functionName: "mint",
-                        args: [kernelAccount.address]
-                    })
+                    data: "0x"
                 })
             }
         })
