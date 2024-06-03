@@ -6,8 +6,9 @@ import {
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
 import {
-    createPasskeyValidator,
-    getPasskeyValidator
+    WebAuthnMode,
+    toPasskeyValidator,
+    toWebAuthnKey
 } from "@zerodev/passkey-validator"
 import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
@@ -86,8 +87,14 @@ export default function Home() {
     const handleRegister = async () => {
         setIsRegistering(true)
 
-        const passkeyValidator = await createPasskeyValidator(publicClient, {
+        const webAuthnKey = await toWebAuthnKey({
             passkeyName: username,
+            passkeyServerUrl: PASSKEY_SERVER_URL,
+            mode: WebAuthnMode.Register
+        })
+
+        const passkeyValidator = await toPasskeyValidator(publicClient, {
+            webAuthnKey,
             passkeyServerUrl: PASSKEY_SERVER_URL,
             entryPoint: ENTRYPOINT_ADDRESS_V07
         })
@@ -101,7 +108,14 @@ export default function Home() {
     const handleLogin = async () => {
         setIsLoggingIn(true)
 
-        const passkeyValidator = await getPasskeyValidator(publicClient, {
+        const webAuthnKey = await toWebAuthnKey({
+            passkeyName: username,
+            passkeyServerUrl: PASSKEY_SERVER_URL,
+            mode: WebAuthnMode.Login
+        })
+
+        const passkeyValidator = await toPasskeyValidator(publicClient, {
+            webAuthnKey,
             passkeyServerUrl: PASSKEY_SERVER_URL,
             entryPoint: ENTRYPOINT_ADDRESS_V07
         })
