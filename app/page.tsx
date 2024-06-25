@@ -10,6 +10,7 @@ import {
     toWebAuthnKey,
     WebAuthnMode
 } from "@zerodev/passkey-validator"
+import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
 import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
