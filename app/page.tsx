@@ -13,7 +13,7 @@ import {
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
-import { createPublicClient, http, parseAbi, zeroAddress } from "viem"
+import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
 import { sepolia } from "viem/chains"
 
 const BUNDLER_URL =
@@ -136,18 +136,13 @@ export default function Home() {
         const userOpHash = await kernelClient.sendUserOperation({
             userOperation: {
                 callData: await kernelAccount.encodeCallData({
-                    // @dev kernel v3 does not have onErc721Received, so it will fail
-                    // to: contractAddress,
-                    // value: BigInt(0),
-                    // data: encodeFunctionData({
-                    //     abi: contractABI,
-                    //     functionName: "mint",
-                    //     args: [kernelAccount.address]
-                    // })
-                    // @dev instead we just send a simple UserOp
-                    to: zeroAddress,
+                    to: contractAddress,
                     value: BigInt(0),
-                    data: "0x"
+                    data: encodeFunctionData({
+                        abi: contractABI,
+                        functionName: "mint",
+                        args: [kernelAccount.address]
+                    })
                 })
             }
         })
