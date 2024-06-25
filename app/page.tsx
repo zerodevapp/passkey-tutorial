@@ -10,6 +10,7 @@ import {
     toPasskeyValidator,
     toWebAuthnKey
 } from "@zerodev/passkey-validator"
+import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
 import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
@@ -51,7 +52,8 @@ export default function Home() {
             entryPoint,
             plugins: {
                 sudo: passkeyValidator
-            }
+            },
+            kernelVersion: KERNEL_V3_1
         })
 
         console.log("Kernel account created: ", kernelAccount.address)
@@ -94,8 +96,8 @@ export default function Home() {
 
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
-            passkeyServerUrl: PASSKEY_SERVER_URL,
-            entryPoint: ENTRYPOINT_ADDRESS_V07
+            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            kernelVersion: KERNEL_V3_1
         })
 
         await createAccountAndClient(passkeyValidator)
@@ -115,8 +117,8 @@ export default function Home() {
 
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
-            passkeyServerUrl: PASSKEY_SERVER_URL,
-            entryPoint: ENTRYPOINT_ADDRESS_V07
+            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            kernelVersion: KERNEL_V3_1
         })
 
         await createAccountAndClient(passkeyValidator)
