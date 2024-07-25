@@ -6,6 +6,7 @@ import {
     createZeroDevPaymasterClient
 } from "@zerodev/sdk"
 import {
+    PasskeyValidatorContractVersion,
     WebAuthnMode,
     toPasskeyValidator,
     toWebAuthnKey
@@ -97,7 +98,8 @@ export default function Home() {
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
             entryPoint: ENTRYPOINT_ADDRESS_V07,
-            kernelVersion: KERNEL_V3_1
+            kernelVersion: KERNEL_V3_1,
+            validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
 
         await createAccountAndClient(passkeyValidator)
@@ -118,7 +120,8 @@ export default function Home() {
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
             entryPoint: ENTRYPOINT_ADDRESS_V07,
-            kernelVersion: KERNEL_V3_1
+            kernelVersion: KERNEL_V3_1,
+            validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
 
         await createAccountAndClient(passkeyValidator)
