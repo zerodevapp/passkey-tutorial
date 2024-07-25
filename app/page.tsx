@@ -1,20 +1,23 @@
 "use client"
 
 import {
+    KernelSmartAccount,
     createKernelAccount,
     createKernelAccountClient,
-    createZeroDevPaymasterClient
+    createZeroDevPaymasterClient,
 } from "@zerodev/sdk"
 import {
     WebAuthnMode,
     toPasskeyValidator,
-    toWebAuthnKey
+    toWebAuthnKey,
+    PasskeyValidatorContractVersion
 } from "@zerodev/passkey-validator"
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
 import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
 import { sepolia } from "viem/chains"
+import { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types"
 
 const BUNDLER_URL =
     "https://rpc.zerodev.app/api/v2/bundler/ec9a8985-9972-42d4-9879-15e21e4fe3b6"
@@ -34,7 +37,7 @@ const publicClient = createPublicClient({
     transport: http(BUNDLER_URL)
 })
 
-let kernelAccount: any
+let kernelAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
 let kernelClient: any
 
 export default function Home() {
@@ -98,7 +101,8 @@ export default function Home() {
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
             entryPoint: ENTRYPOINT_ADDRESS_V07,
-            kernelVersion: KERNEL_V3_1
+            kernelVersion: KERNEL_V3_1,
+            validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
 
         await createAccountAndClient(passkeyValidator)
@@ -119,7 +123,8 @@ export default function Home() {
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
             entryPoint: ENTRYPOINT_ADDRESS_V07,
-            kernelVersion: KERNEL_V3_1
+            kernelVersion: KERNEL_V3_1,
+            validatorContractVersion: PasskeyValidatorContractVersion.V0_0_1s
         })
 
         await createAccountAndClient(passkeyValidator)
