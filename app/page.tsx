@@ -8,7 +8,8 @@ import {
 import {
     toPasskeyValidator,
     toWebAuthnKey,
-    WebAuthnMode
+    WebAuthnMode,
+    PasskeyValidatorContractVersion
 } from "@zerodev/passkey-validator"
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
