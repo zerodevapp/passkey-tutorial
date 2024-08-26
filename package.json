@@ -11,6 +11,7 @@
     "dependencies": {
         "@zerodev/sdk": "5.3.4",
         "@zerodev/passkey-validator": "5.4.0",
+        "@zerodev/webauthn-key": "5.3.2-alpha-0",
         "next": "14.1.0",
         "react": "^18",
         "react-dom": "^18",
