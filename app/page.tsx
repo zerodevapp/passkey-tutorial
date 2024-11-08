@@ -1,10 +1,10 @@
 "use client"
 
 import {
-    KernelSmartAccount,
     createKernelAccount,
     createKernelAccountClient,
     createZeroDevPaymasterClient,
+    KernelSmartAccountImplementation,
 } from "@zerodev/sdk"
 import {
     WebAuthnMode,
@@ -13,18 +13,17 @@ import {
     PasskeyValidatorContractVersion
 } from "@zerodev/passkey-validator"
 import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
-import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
 import React, { useEffect, useState } from "react"
-import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
+import { createPublicClient, http, parseAbi, encodeFunctionData, Address } from "viem"
 import { sepolia } from "viem/chains"
-import { ENTRYPOINT_ADDRESS_V07_TYPE } from "permissionless/types"
+import {entryPoint07Address, SmartAccount, EntryPointVersion} from "viem/account-abstraction"
 
 const BUNDLER_URL =
-    "https://rpc.zerodev.app/api/v2/bundler/ec9a8985-9972-42d4-9879-15e21e4fe3b6"
+    "https://rpc.zerodev.app/api/v2/bundler/efbc1add-1c14-476e-b3f1-206db80e673c?provider=PIMLICO"
 const PAYMASTER_URL =
-    "https://rpc.zerodev.app/api/v2/paymaster/ec9a8985-9972-42d4-9879-15e21e4fe3b6"
+    "https://rpc.zerodev.app/api/v2/paymaster/efbc1add-1c14-476e-b3f1-206db80e673c?provider=PIMLICO"
 const PASSKEY_SERVER_URL =
-    "https://passkeys.zerodev.app/api/v3/ec9a8985-9972-42d4-9879-15e21e4fe3b6"
+    "https://passkeys.zerodev.app/api/v3/efbc1add-1c14-476e-b3f1-206db80e673c"
 const CHAIN = sepolia
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
@@ -34,10 +33,15 @@ const contractABI = parseAbi([
 ])
 
 const publicClient = createPublicClient({
-    transport: http(BUNDLER_URL)
+    transport: http(BUNDLER_URL),
+    chain: CHAIN
 })
+const entryPoint = {
+    address: entryPoint07Address as Address,
+    version: "0.7" as EntryPointVersion
+}
 
-let kernelAccount: KernelSmartAccount<ENTRYPOINT_ADDRESS_V07_TYPE>
+let kernelAccount: SmartAccount<KernelSmartAccountImplementation>
 let kernelClient: any
 
 export default function Home() {
@@ -53,7 +57,10 @@ export default function Home() {
 
     const createAccountAndClient = async (passkeyValidator: any) => {
         kernelAccount = await createKernelAccount(publicClient, {
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint: {
+                address: entryPoint07Address,
+                version: "0.7"
+            },
             plugins: {
                 sudo: passkeyValidator
             },
@@ -62,26 +69,21 @@ export default function Home() {
 
         console.log("Kernel account created: ", kernelAccount.address)
 
+        const zeroDevPaymaster = await createZeroDevPaymasterClient(
+            {
+                chain: CHAIN,
+                transport: http(PAYMASTER_URL),
+                entryPoint: {
+                    address: entryPoint07Address,
+                    version: "0.7"
+                }
+            }
+        )
         kernelClient = createKernelAccountClient({
             account: kernelAccount,
             chain: CHAIN,
             bundlerTransport: http(BUNDLER_URL),
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
-                    const zeroDevPaymaster = await createZeroDevPaymasterClient(
-                        {
-                            chain: CHAIN,
-                            transport: http(PAYMASTER_URL),
-                            entryPoint: ENTRYPOINT_ADDRESS_V07
-                        }
-                    )
-                    return zeroDevPaymaster.sponsorUserOperation({
-                        userOperation,
-                        entryPoint: ENTRYPOINT_ADDRESS_V07
-                    })
-                }
-            }
+            paymaster: zeroDevPaymaster
         })
 
         setIsKernelClientReady(true)
@@ -95,12 +97,16 @@ export default function Home() {
         const webAuthnKey = await toWebAuthnKey({
             passkeyName: username,
             passkeyServerUrl: PASSKEY_SERVER_URL,
-            mode: WebAuthnMode.Register
+            mode: WebAuthnMode.Register,
+            passkeyServerHeaders: {}
         })
 
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint: {
+                address: entryPoint07Address,
+                version: "0.7"
+            },
             kernelVersion: KERNEL_V3_1,
             validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
@@ -117,12 +123,16 @@ export default function Home() {
         const webAuthnKey = await toWebAuthnKey({
             passkeyName: username,
             passkeyServerUrl: PASSKEY_SERVER_URL,
-            mode: WebAuthnMode.Login
+            mode: WebAuthnMode.Login,
+            passkeyServerHeaders: {}
         })
 
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint: {
+                address: entryPoint07Address,
+                version: "0.7"
+            },
             kernelVersion: KERNEL_V3_1,
             validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
@@ -139,8 +149,7 @@ export default function Home() {
         setUserOpStatus("Sending UserOp...")
 
         const userOpHash = await kernelClient.sendUserOperation({
-            userOperation: {
-                callData: await kernelAccount.encodeCallData({
+                callData: await kernelAccount.encodeCalls([{
                     to: contractAddress,
                     value: BigInt(0),
                     data: encodeFunctionData({
@@ -148,16 +157,13 @@ export default function Home() {
                         functionName: "mint",
                         args: [kernelAccount.address]
                     })
-                })
-            }
+                }])
         })
 
         setUserOpHash(userOpHash)
 
-        const bundlerClient = kernelClient.extend(
-            bundlerActions(ENTRYPOINT_ADDRESS_V07)
-        )
-        await bundlerClient.waitForUserOperationReceipt({
+        
+        await kernelClient.waitForUserOperationReceipt({
             hash: userOpHash
         })
 
