@@ -11,8 +11,7 @@ import {
     toPasskeyValidator,
     toWebAuthnKey
 } from "@zerodev/passkey-validator"
-import { KERNEL_V3_1 } from "@zerodev/sdk/constants"
-import { bundlerActions, ENTRYPOINT_ADDRESS_V07 } from "permissionless"
+import { getEntryPoint, KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import React, { useEffect, useState } from "react"
 import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
 import { sepolia } from "viem/chains"
@@ -22,7 +21,7 @@ const BUNDLER_URL = ""
 const PAYMASTER_URL = ""
 const PASSKEY_SERVER_URL = ""
 const CHAIN = sepolia
-const entryPoint = ENTRYPOINT_ADDRESS_V07
+const entryPoint = getEntryPoint("0.7")
 
 const contractAddress = "0x34bE7f35132E97915633BC1fc020364EA5134863"
 const contractABI = parseAbi([
@@ -31,7 +30,8 @@ const contractABI = parseAbi([
 ])
 
 const publicClient = createPublicClient({
-    transport: http(BUNDLER_URL)
+    transport: http(BUNDLER_URL),
+    chain: CHAIN
 })
 
 let kernelAccount: any
@@ -63,19 +63,16 @@ export default function Home() {
             account: kernelAccount,
             chain: CHAIN,
             bundlerTransport: http(BUNDLER_URL),
-            entryPoint,
-            middleware: {
-                sponsorUserOperation: async ({ userOperation }) => {
+            paymaster: {
+                getPaymasterData: async (userOperation) => {
                     const zeroDevPaymaster = await createZeroDevPaymasterClient(
                         {
                             chain: CHAIN,
                             transport: http(PAYMASTER_URL),
-                            entryPoint
                         }
                     )
                     return zeroDevPaymaster.sponsorUserOperation({
                         userOperation,
-                        entryPoint
                     })
                 }
             }
@@ -92,12 +89,13 @@ export default function Home() {
         const webAuthnKey = await toWebAuthnKey({
             passkeyName: username,
             passkeyServerUrl: PASSKEY_SERVER_URL,
-            mode: WebAuthnMode.Register
+            mode: WebAuthnMode.Register,
+            passkeyServerHeaders: {}
         })
 
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint,
             kernelVersion: KERNEL_V3_1,
             validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
@@ -114,12 +112,13 @@ export default function Home() {
         const webAuthnKey = await toWebAuthnKey({
             passkeyName: username,
             passkeyServerUrl: PASSKEY_SERVER_URL,
-            mode: WebAuthnMode.Login
+            mode: WebAuthnMode.Login,
+            passkeyServerHeaders: {}
         })
 
         const passkeyValidator = await toPasskeyValidator(publicClient, {
             webAuthnKey,
-            entryPoint: ENTRYPOINT_ADDRESS_V07,
+            entryPoint,
             kernelVersion: KERNEL_V3_1,
             validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
@@ -136,8 +135,8 @@ export default function Home() {
         setUserOpStatus("Sending UserOp...")
 
         const userOpHash = await kernelClient.sendUserOperation({
-            userOperation: {
-                callData: await kernelAccount.encodeCallData({
+            callData: await kernelAccount.encodeCalls([
+                {
                     to: contractAddress,
                     value: BigInt(0),
                     data: encodeFunctionData({
@@ -145,16 +144,13 @@ export default function Home() {
                         functionName: "mint",
                         args: [kernelAccount.address]
                     })
-                })
-            }
+                }
+            ])
         })
 
         setUserOpHash(userOpHash)
 
-        const bundlerClient = kernelClient.extend(
-            bundlerActions(ENTRYPOINT_ADDRESS_V07)
-        )
-        await bundlerClient.waitForUserOperationReceipt({
+        await kernelClient.waitForUserOperationReceipt({
             hash: userOpHash
         })
 
