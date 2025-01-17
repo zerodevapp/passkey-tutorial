@@ -9,17 +9,17 @@ import {
     PasskeyValidatorContractVersion,
     WebAuthnMode,
     toPasskeyValidator,
-    toWebAuthnKey
 } from "@zerodev/passkey-validator"
+import { toWebAuthnKey } from "./lib/passkey"
 import { getEntryPoint, KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import React, { useEffect, useState } from "react"
 import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
 import { sepolia } from "viem/chains"
 
 // @dev add your BUNDLER_URL, PAYMASTER_URL, and PASSKEY_SERVER_URL here
-const BUNDLER_URL = ""
-const PAYMASTER_URL = ""
-const PASSKEY_SERVER_URL = ""
+const BUNDLER_URL = "https://rpc.zerodev.app/api/v2/bundler/7b27fa95-c19b-475a-8119-d0f8783114bf"
+const PAYMASTER_URL = "https://rpc.zerodev.app/api/v2/paymaster/7b27fa95-c19b-475a-8119-d0f8783114bf"
+const PASSKEY_SERVER_URL = "https://passkeys.zerodev.app/api/v3/7b27fa95-c19b-475a-8119-d0f8783114bf"
 const CHAIN = sepolia
 const entryPoint = getEntryPoint("0.7")
 
@@ -161,6 +161,83 @@ export default function Home() {
         setIsSendingUserOp(false)
     }
 
+    const handlePRF = async () => {
+        const state = {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            username: 'example',
+            // userId to be populated in a moment
+            userId: null,
+            // salt won't matter for registration
+            // it just needs the right type
+            salt: new Uint8Array(new Array(32).fill(1)),
+            // credential: null,
+            prfSupported: true,
+            // The following is a synthetic example of the
+            // application state, it will not actually work.
+            credential: {
+              rawId: new Uint8Array(new Array(64).fill(1)),
+              response: {
+                getTransports: () => {['usb']}
+              }
+            },
+            authCredential: null as Credential | null,
+
+          }
+
+          const options = {
+            publicKey: {
+              // If we actually wanted to verify a signature
+              // this would be important to reference
+              challenge: state.challenge,
+              // We should present the same relying party
+              // information to the authenticator when it
+              // returns for authentication
+              rpId: "localhost",
+              // Here we tell the browser which authenticators
+              // we are looking for
+              allowCredentials: [
+                // Only one authenticator is desired since
+                // the PRF secret is tied to one and only one
+                // authenticator.
+                {
+                  // Here you'd likely base64 decode the id field
+                  // from a server and use that
+                  id: state.credential.rawId,
+                  // This field is optional, we can restrict the
+                  // transports to the types the authenticator
+                  // reported upon registration
+                  transports: state.credential.response.getTransports(),
+                  // There's only one choice: public-key
+                  type: "public-key",
+                },
+              ],
+              // The PRF is bound to which UV mode is used
+              // This may either be discouraged or required
+              userVerification: 'discouraged',
+              // And finally the extensions again
+              // This time, the salt value matters
+              extensions: {
+                prf: {
+                  eval: {
+                    // Input the contextual information
+                    first: state.salt,
+                    // There is a "second" optional field too
+                    // Though it is intended for key rotation.
+                  },
+                },
+              },
+            },
+          };
+          const authCredential = await navigator.credentials.get(options as any);
+        state.authCredential = authCredential as Credential;
+        // Separate from the authentication, we have to ask for the extension results
+        let extensions = (state.authCredential as any).getClientExtensionResults();
+        if (extensions.prf?.results?.first) {
+        // Import the key material directly into an encryption key
+            console.log(extensions.prf.results.first);
+        }
+    }
+
     useEffect(() => {
         setMounted(true)
     }, [])
@@ -243,6 +320,30 @@ export default function Home() {
                         >
                             {isLoggingIn ? <Spinner /> : "Login"}
                         </button>
+                    </div>
+
+                    {/* Send UserOp Button */}
+                    <div className="flex flex-col items-center w-full">
+                        <button
+                            onClick={handlePRF}
+                            disabled={!isKernelClientReady || isSendingUserOp}
+                            className={`px-4 py-2 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-opacity-50 flex justify-center items-center w-full ${
+                                isKernelClientReady && !isSendingUserOp
+                                    ? "bg-green-500 hover:bg-green-700 focus:ring-green-500"
+                                    : "bg-gray-500"
+                            }`}
+                        >
+                            {isSendingUserOp ? <Spinner /> : "PRF"}
+                        </button>
+                        {/* UserOp Status Label */}
+                        {userOpHash && (
+                            <div
+                                className="mt-4"
+                                dangerouslySetInnerHTML={{
+                                    __html: userOpStatus
+                                }}
+                            />
+                        )}
                     </div>
 
                     {/* Send UserOp Button */}
