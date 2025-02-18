@@ -3,23 +3,27 @@
 import {
     createKernelAccount,
     createKernelAccountClient,
-    createZeroDevPaymasterClient
+    createZeroDevPaymasterClient,
+    verifyEIP6492Signature
 } from "@zerodev/sdk"
 import {
-    PasskeyValidatorContractVersion,
-    WebAuthnMode,
-    toPasskeyValidator,
-    toWebAuthnKey
-} from "@zerodev/passkey-validator"
+    toMultiChainWebAuthnValidator
+} from "@zerodev/multi-chain-web-authn-validator"
+import {
+    WebAuthnKey,
+    toWebAuthnKey,
+    WebAuthnMode
+} from "@zerodev/webauthn-key"
 import { getEntryPoint, KERNEL_V3_1 } from "@zerodev/sdk/constants"
 import React, { useEffect, useState } from "react"
-import { createPublicClient, http, parseAbi, encodeFunctionData } from "viem"
+import { createPublicClient, http, parseAbi, encodeFunctionData, hashMessage, hashTypedData } from "viem"
 import { sepolia } from "viem/chains"
 
 // @dev add your BUNDLER_URL, PAYMASTER_URL, and PASSKEY_SERVER_URL here
-const BUNDLER_URL = ""
-const PAYMASTER_URL = ""
-const PASSKEY_SERVER_URL = ""
+const NEXT_PUBLIC_ZERODEV_API_KEY = process.env.NEXT_PUBLIC_ZERODEV_API_KEY
+const BUNDLER_URL = `https://rpc.zerodev.app/api/v2/bundler/${NEXT_PUBLIC_ZERODEV_API_KEY}`
+const PAYMASTER_URL = `https://rpc.zerodev.app/api/v2/paymaster/${NEXT_PUBLIC_ZERODEV_API_KEY}`
+const PASSKEY_SERVER_URL = `https://passkeys.zerodev.app/api/v3/${NEXT_PUBLIC_ZERODEV_API_KEY}`
 const CHAIN = sepolia
 const entryPoint = getEntryPoint("0.7")
 
@@ -47,7 +51,10 @@ export default function Home() {
     const [isSendingUserOp, setIsSendingUserOp] = useState(false)
     const [userOpHash, setUserOpHash] = useState("")
     const [userOpStatus, setUserOpStatus] = useState("")
-
+    const [isSigning, setIsSigning] = useState(false)
+    const [signResult, setSignResult] = useState("")
+    const [isEIP712Signing, setIsEIP712Signing] = useState(false)
+    const [eip712Result, setEip712Result] = useState("")
     const createAccountAndClient = async (passkeyValidator: any) => {
         kernelAccount = await createKernelAccount(publicClient, {
             entryPoint,
@@ -93,11 +100,10 @@ export default function Home() {
             passkeyServerHeaders: {}
         })
 
-        const passkeyValidator = await toPasskeyValidator(publicClient, {
+        const passkeyValidator = await toMultiChainWebAuthnValidator(publicClient, {
             webAuthnKey,
             entryPoint,
             kernelVersion: KERNEL_V3_1,
-            validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
 
         await createAccountAndClient(passkeyValidator)
@@ -116,11 +122,10 @@ export default function Home() {
             passkeyServerHeaders: {}
         })
 
-        const passkeyValidator = await toPasskeyValidator(publicClient, {
+        const passkeyValidator = await toMultiChainWebAuthnValidator(publicClient, {
             webAuthnKey,
             entryPoint,
             kernelVersion: KERNEL_V3_1,
-            validatorContractVersion: PasskeyValidatorContractVersion.V0_0_2
         })
 
         await createAccountAndClient(passkeyValidator)
@@ -159,6 +164,104 @@ export default function Home() {
 
         setUserOpStatus(userOpMessage)
         setIsSendingUserOp(false)
+    }
+
+    const handleSignature = async () => {
+        setIsSigning(true)
+
+        // sign sample eip712 message
+        const signature = await kernelClient.signMessage({
+            message: "hello world",
+        });
+        console.log("signature", signature)
+
+        const result = await verifyEIP6492Signature({
+            signer: kernelClient.account.address, // your smart account address
+            hash: hashMessage("hello world"),
+            signature: signature,
+            client: publicClient,
+        })
+
+        setSignResult(result ? "Signature verified" : "Signature not verified")
+      
+        setIsSigning(false)
+    }
+
+    const handleEIP712 = async () => {
+        setIsEIP712Signing(true)
+
+        const signature = await kernelClient.signTypedData({
+            domain: { 
+                name: 'Ether Mail',
+                version: '1',
+                chainId: 1,
+                verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+              },
+              types: { 
+                Person: [
+                  { name: 'name', type: 'string' },
+                  { name: 'wallet', type: 'address' },
+                ],
+                Mail: [
+                  { name: 'from', type: 'Person' },
+                  { name: 'to', type: 'Person' },
+                  { name: 'contents', type: 'string' },
+                ],
+              },
+            primaryType: 'Mail',
+              message: {
+                from: {
+                  name: 'Cow',
+                  wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+                },
+                to: {
+                  name: 'Bob',
+                  wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+                },
+                contents: 'Hello, Bob!',
+              },
+        })
+
+        const hash = hashTypedData({
+            domain: { 
+              name: 'Ether Mail',
+              version: '1',
+              chainId: 1,
+              verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+            },
+            types: { 
+                Person: [
+                  { name: 'name', type: 'string' },
+                  { name: 'wallet', type: 'address' },
+                ],
+                Mail: [
+                  { name: 'from', type: 'Person' },
+                  { name: 'to', type: 'Person' },
+                  { name: 'contents', type: 'string' },
+                ],
+              },
+            primaryType: 'Mail',
+            message: {
+              from: {
+                name: 'Cow',
+                wallet: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
+              },
+              to: {
+                name: 'Bob',
+                wallet: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
+              },
+              contents: 'Hello, Bob!',
+            },
+          })      
+        console.log("signature", signature)
+        const result = await verifyEIP6492Signature({
+            signer: kernelClient.account.address, // your smart account address
+            hash: hash,
+            signature: signature,
+            client: publicClient,
+        })
+        setEip712Result(result ? "712 verified" : "712 not verified")
+        setIsEIP712Signing(false)
     }
 
     useEffect(() => {
@@ -268,6 +371,32 @@ export default function Home() {
                             />
                         )}
                     </div>
+                    {/* Signature Button */}
+                    <button
+                        onClick={handleSignature}
+                        disabled={isSigning}
+                        className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 w-full"
+                    >
+                        {isSigning ? <Spinner /> : "Sign Message"}
+                        {signResult && (
+                            <div className="mt-2">
+                                {signResult}
+                            </div>
+                        )}
+                    </button>
+                    {/* EIP712 Button */}
+                    <button
+                        onClick={handleEIP712}
+                        disabled={isEIP712Signing}
+                        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 w-full"
+                    >
+                        {isEIP712Signing ? <Spinner /> : "Sign EIP712"}
+                        {eip712Result && (
+                            <div className="mt-2">
+                                {eip712Result}
+                            </div>
+                        )}
+                    </button>
                 </div>
             </div>
         </main>
