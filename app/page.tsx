@@ -342,6 +342,7 @@ export default function Home() {
 
 
         const newKernelAccount = await createKernelAccount(publicClient, {
+            address: kernelAccount.address,
             entryPoint,
             plugins: {
                 sudo: newPasskeyValidator
