@@ -44,7 +44,7 @@ let kernelClient: any
 let guardianAccount: any
 let guardianClient: any
 let newPasskeyValidator: any
-const CALLER_HOOK = "0x990a9FC8189D96d59E3cE98bd87F42135a24a30E";
+const CALLER_HOOK = "0x2f6B23f3c2Fd7D91AF316c93076a00CAd42189a2";
 const RECOVERY_ACTION_ADDRESS = "0xe884C2868CC82c16177eC73a93f7D9E6F3A5DC6E"
 const ACTION_MODULE_TYPE = 3;
 const recoveryExecutorFunction =
